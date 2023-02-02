@@ -14,6 +14,8 @@ from colorama import Fore
 import os
 from pystyle import Add, Center, Anime, Colors, Colorate, Write, System
 from multiprocessing import Process
+import math
+#from playsound import playsound
 
 
 # ----- initialistion des modules -----#
@@ -79,7 +81,6 @@ def line_intersection(line1, line2):
 
 # ----- fonction pour trouver les point intersection de la ligne de coup et de la Courbe -----#
 
-
 def Finder_IETE(time1, time_name1, start1):
     # global proxies
     # while True:
@@ -132,13 +133,13 @@ def Finder_IETE(time1, time_name1, start1):
             aaa = 0
 
     # ----- creation des local(min/max) -----#
-    local_max = argrelextrema(df['c'].values, np.greater, order=1, mode='clip')[0]
-    local_min = argrelextrema(df['c'].values, np.less, order=1, mode='clip')[0]
-    local_max1 = argrelextrema(df['c'].values, np.greater, order=1, mode='clip')[0]
-    local_min1 = argrelextrema(df['c'].values, np.less, order=1, mode='clip')[0]
+    local_max = argrelextrema(df['c'].values, np.greater, order=2, mode='clip')[0]
+    local_min = argrelextrema(df['c'].values, np.less, order=2, mode='clip')[0]
+    local_max1 = argrelextrema(df['c'].values, np.greater, order=2, mode='clip')[0]
+    local_min1 = argrelextrema(df['c'].values, np.less, order=2, mode='clip')[0]
 
-    local_max2 = argrelextrema(df['c'].values, np.greater, order=1, mode='clip')[0]
-    local_min2 = argrelextrema(df['c'].values, np.less, order=1, mode='clip')[0]
+    local_max2 = argrelextrema(df['c'].values, np.greater, order=2, mode='clip')[0]
+    local_min2 = argrelextrema(df['c'].values, np.less, order=2, mode='clip')[0]
 
     # ----- creation des local(min/max) -----#
 
@@ -179,16 +180,28 @@ def Finder_IETE(time1, time_name1, start1):
     decalage = 0
 
     # ----- suppresion des points morts de la courbe -----#
-    AA = float(df['c'].iloc[local_min[-4]])
-    BB = float(df['c'].iloc[local_max[-4]])
-    A = float(df['c'].iloc[local_min[-3]])
-    B = float(df['c'].iloc[local_max[-2]])
-    C = float(df['c'].iloc[local_min[-2]])
-    D = float(df['c'].iloc[local_max[-1]])
-    E = float(df['c'].iloc[local_min[-1]])
-    F = float(livePrice)
+    A = float(df['c'].iloc[local_max[-3]])
+    B = float(df['c'].iloc[local_min[-3]])
+    C = float(df['c'].iloc[local_max[-2]])
+    D = float(df['c'].iloc[local_min[-2]])
+    E = float(df['c'].iloc[local_max[-1]])
+    F = float(df['c'].iloc[local_min[-1]])
+    G = float(livePrice)
 
-    print('--- Mode recherche KEN', time1, time_name1, ' ---', flush=True)
+    if C > E:
+        differ = (C - E)
+        pas = (local_max[-1] - local_max[-2])
+        suite = differ / pas
+    if C < E:
+        differ = (E - C)
+        pas = (local_max[-1] - local_max[-2])
+        suite = differ / pas
+
+    Write.Print("  >> RECHERCHE IETE  :", Colors.white, interval=0.000)
+    Write.Print("  KEN", Colors.green, interval=0.000)
+    Write.Print(f"  {time1} {time_name1}", Colors.cyan, interval=0.000)
+    Write.Print("  <<", Colors.white, interval=0.000)
+    print('')
 
     data_A = []
     data_B = []
@@ -196,13 +209,13 @@ def Finder_IETE(time1, time_name1, start1):
     data_D = []
     data_E = []
     data_F = []
+    data_G = []
 
     rouge = []
     vert = []
     bleu = []
 
-    rouge.append(local_min[-4])
-    rouge.append(local_max[-4])
+    rouge.append(local_max[-3])
     rouge.append(local_min[-3])
     rouge.append(local_max[-2])
     rouge.append(local_min[-2])
@@ -210,61 +223,139 @@ def Finder_IETE(time1, time_name1, start1):
     rouge.append(local_min[-1])
     rouge.append(place_liveprice)
 
+    vert.append(local_max[-3])
+    vert.append(local_max[-2])
+    vert.append(local_max[-1])
+    vert.append(place_liveprice)
 
     i = 0
     for i in range(local_max[-4] - 1, len(df)):
         bleu.append(i)
 
+    mirande2 = df.iloc[vert, :]
     mirande = df.iloc[rouge, :]
     mirande3 = df.iloc[bleu, :]
 
+    if E > C:
+        mirande2['c'].values[0] = mirande2['c'].values[1] - ((suite * (local_max[-2] - local_max[-3])))
+        mirande2['c'].values[3] = mirande2['c'].values[2] + ((suite * (place_liveprice - local_max[-1])))
+    if E < C:
+        mirande2['c'].values[0] = mirande2['c'].values[1] + ((suite * (local_max[-2] - local_max[-3])))
+        mirande2['c'].values[3] = mirande2['c'].values[2] - ((suite * (place_liveprice - local_max[-1])))
+    if E == C:
+        mirande2['c'].values[0] = df['c'].values[local_max[-2]]
+        mirande2['c'].values[3] = df['c'].values[local_max[-1]]
 
+    vert1 = {'c': vert}
+    vert2 = pd.DataFrame(data=vert1)
     rouge1 = {'c': rouge}
     rouge2 = pd.DataFrame(data=rouge1)
     bleu1 = {'c': bleu}
     bleu2 = pd.DataFrame(data=bleu1)
+    # --- premier droite ---#
+    AI = [local_max[-3], mirande2['c'].iloc[0]]
+    BI = [local_max[-2], mirande2['c'].iloc[1]]
 
+    # --- deuxieme droite ---#
+    CI = [local_max[-3], A]
+    DI = [local_min[-3], B]
+    # I = line_intersection((AI, BI), (CI, DI))
+
+    # ----------------------------------------------------------------------------#
+    # ----------------------------------------------------------------------------#
+
+    AJ = [local_max[-1], mirande2['c'].iloc[2]]
+    BJ = [place_liveprice, mirande2['c'].iloc[3]]
+
+    # --- deuxieme droite ---#
+    CJ = [place_liveprice, G]
+    DJ = [local_min[-1], F]
+    # J = line_intersection((AJ, BJ), (CJ, DJ))
+
+    # ----- verification qu'il n'y est pas de point mort dans la figure -----#
+    pop = 0
+    verif = 0
+
+    for pop in range(0, len(test_min)):
+        if test_min[pop] > local_max[-3] and test_min[pop] < place_liveprice:
+            verif = verif + 1
+    pop = 0
+    for pop in range(0, len(test_max)):
+        if test_max[pop] > local_max[-3] and test_max[pop] < place_liveprice:
+            verif = verif + 1
+    # ----- verification qu'il n'y est pas de point mort dans la figure -----
     ordre = False
-    pourcent = False
-
-    if local_min[-4] < local_max[-4] < local_min[-3] < local_max[-2] < local_min[-2] < local_max[-1] <local_min[-1]:
+    if local_max[-3] < local_min[-3] < local_max[-2] < local_min[-2] < local_max[-1] < local_min[-1]:
         ordre = True
 
-    if ((BB - AA)*100)/A >= 3:
-        pourcent = True
+    mini_pourcent = False
+    if ((((C + E) / 2) - D) * 100) / D >= 2.8:
+        mini_pourcent = True
+
+    if (C - B) < (C - D) and (C - B) < (E - D) and (E - F) < (E - D) and (E - F) < (
+            C - D) and B > D and F > D and B < C and F < E and A >= mirande2['c'].iloc[
+        0] and verif == 0 and ordre == True and mini_pourcent == True:
+        try:
+            J = line_intersection((AJ, BJ), (CJ, DJ))
+            I = line_intersection((AI, BI), (CI, DI))
+            accept = True
+        except:
+            accept = False
+        if accept == True:
+            moyenne_epaule1 = ((I[1] - B) + (C - B)) / 2
+            moyenne_epaule2 = ((E - F) + (J[1] - F)) / 2
+            moyenne_tete = ((C - D) + (E - D)) / 2
+
+            tuche = 0
+            noo = 0
+            place_pc = 0
+            point_max = J[0] + ((J[0] - I[0]))
+            point_max = int(round(point_max, 0))
+        if I[1] > B and J[
+            1] > F and moyenne_epaule1 <= moyenne_tete / 2 and moyenne_epaule2 <= moyenne_tete / 2 and moyenne_epaule1 >= moyenne_tete / 4 and moyenne_epaule2 >= moyenne_tete / 4 and accept == True and \
+                df['c'].values[-2] <= J[1] + (moyenne_tete) / 4 and df['c'].values[-2] >= J[1] and df['c'].values[-1] <= \
+                J[1] + (moyenne_tete) / 4 and df['c'].values[-1] >= J[1]:
 
 
-    if ((BB - AA) > (BB - A) and (BB - A) > (B - A) and (B - A) > (B - C) and (B - C) > (D - C) and (D - C) > (D - E) and (D - E) > (F - E) and df['c'].values[-2] == lows['c'].iloc[-1]) or ((AA - BB) > (A - BB) and (A - BB) > (A - B) and (A - B) > (C - B) and (C - B) > (C - D) and (C - D) > (E - D) and (E - D) > (F - E) and df['c'].values[-2] == highs['c'].iloc[-1]) and ordre == True and pourcent == True:
 
-
-
-            #plus_grand = round((J[1] + (moyenne_tete) / 2), 5)
-            #plus_petit = round(G, 5)
-            #pourcent_chercher = ((plus_grand - plus_petit) / plus_petit)*100
-            #pourcent_chercher = round(pourcent_chercher, 3)
+            #playsound('note.wav')
+            plus_grand = round((J[1] + (moyenne_tete) / 2), 5)
+            plus_petit = round(G, 5)
+            pourcent_chercher = ((plus_grand - plus_petit) / plus_petit)*100
+            pourcent_chercher = round(pourcent_chercher, 3)
+            pourcent_perdu = ((round(G, 5)-round(F, 5))*100)/round(G, 5)
             fig = plt.figure(figsize=(10, 7))
             # fig.patch.set_facecolor('#17abde'
             plt.plot([], [], ' ')
-            plt.title(f'IETE : {tiker_live} | {time1} {time_name1} ', fontweight="bold", color='black')
+            plt.title(f'IETE : {tiker_live} | {time1} {time_name1} | +{pourcent_chercher}% | -{pourcent_perdu}%', fontweight="bold", color='black')
             mirande3['c'].plot(color=['blue'], label='Clotures')
             # mirande['c'].plot(color=['#FF0000'])
-
+            mirande2['c'].plot(color=['green'], linestyle='--', label='Ligne de coup')
+            plt.axhline(y=J[1] + moyenne_tete, linestyle='--', alpha=0.3, color='red', label='100% objectif')
+            plt.axhline(y=J[1] + (((moyenne_tete) / 2) + ((moyenne_tete) / 4)), linestyle='--', alpha=0.3,
+                        color='black', label='75% objectif')
+            plt.axhline(y=J[1] + (moyenne_tete) / 2, linestyle='--', alpha=0.3, color='orange', label='50% objectif')
+            plt.axhline(y=J[1] + (moyenne_tete) / 4, linestyle='--', alpha=0.3, color='black', label='25% objectif')
             plt.grid(b=True, which='major', color='#666666', linestyle='-', alpha=0.1)
+            taille_diviser = (local_max[-1] - local_max[-2]) / (local_min[-2] - local_max[-2])
             # point_max = J[0]+((J[0] - I[0])/taille_diviser)
+            point_max = J[0] + ((J[0] - I[0]))
+            point_max = int(round(point_max, 0))
             # plt.scatter(point_max, df['c'].values[int(round(point_max, 0))], color='red',label='Max temps realisation')
             plt.legend()
-            plt.text(local_min[-3], A, "A", ha='left', style='normal', size=10.5, color='red', wrap=True)
-            #plt.text(J[0], J[1] + (moyenne_tete) / 2, f"{round((J[1] + (moyenne_tete) / 2), 5)}", ha='left', style='normal', size=10.5, color='red', wrap=True)
-            plt.text(local_max[-2], B, "B", ha='left', style='normal', size=10.5, color='red', wrap=True)
-            plt.text(local_min[-2], C, "C", ha='left', style='normal', size=10.5, color='red', wrap=True)
-            plt.text(local_max[-1], D, "D", ha='left', style='normal', size=10.5, color='red', wrap=True)
-            plt.text(local_min[-1], E, "E", ha='left', style='normal', size=10.5, color='red', wrap=True)
-            plt.text(place_liveprice, F, f"F  {round(F, 5)}", ha='left', style='normal', size=10.5, color='red', wrap=True)
-            #plt.text(place_liveprice, G, f"G  {round(G, 5)}", ha='left', style='normal', size=10.5, color='red', wrap=True)
-            #plt.text(I[0], I[1], "I", ha='left', style='normal', size=10.5, color='#00FF36', wrap=True)
+            plt.text(local_max[-3], A, "A", ha='left', style='normal', size=10.5, color='red', wrap=True)
+            plt.text(J[0], J[1] + (moyenne_tete) / 2, f"{round((J[1] + (moyenne_tete) / 2), 5)}", ha='left', style='normal', size=10.5, color='red', wrap=True)
+            plt.text(local_min[-3], B, "B", ha='left', style='normal', size=10.5, color='red', wrap=True)
+            plt.text(local_max[-2], C, "C", ha='left', style='normal', size=10.5, color='red', wrap=True)
+            plt.text(local_min[-2], D, "D", ha='left', style='normal', size=10.5, color='red', wrap=True)
+            plt.text(local_max[-1], E, "E", ha='left', style='normal', size=10.5, color='red', wrap=True)
+            plt.text(local_min[-1], F, f"F  {round(F, 5)}", ha='left', style='normal', size=10.5, color='red', wrap=True)
+            plt.text(place_liveprice, G, f"G  {round(G, 5)}", ha='left', style='normal', size=10.5, color='red', wrap=True)
+            plt.text(I[0], I[1], "I", ha='left', style='normal', size=10.5, color='#00FF36', wrap=True)
             # test_valeur = df['c'].iloc[round(J[0]) + 1]
             # plt.text(round(J[0]), df['c'].iloc[round(J[0])], f"J+1 {test_valeur}", ha='left',style='normal', size=10.5, color='#00FF36', wrap=True)
             plt.scatter(len(df['c']) - 1, df['c'].values[-1], color='blue', label='liveprice')
+            plt.scatter(len(df['c']) - 2, df['c'].values[-2], color='orange', label='cloture')
             plt.show()
             # -----------------------lire et connaitre nom de image et enregistrer image--------------------------#
             # file = open('/home/mat/Bureau/logi3_direct/compteur_images.txt', 'r')
@@ -277,19 +368,33 @@ def Finder_IETE(time1, time_name1, start1):
             # plt.savefig(f'images/figure_{compteur_nombre_image}.png'
             # -----------------------lire et connaitre nom de image et enregistrer image--------------------------#
 
+            multiplicateur = 0
+            if time_name1 == 'minute':
+                multiplicateur = 60
+
+            if time_name1 == 'hour':
+                multiplicateur = 3600
+
+            if time_name1 == 'day':
+                multiplicateur = 86400
+
+            temps_attente = time1 * multiplicateur
+            time.sleep(temps_attente)
             data_A.append(A)
             data_B.append(B)
             data_C.append(C)
             data_D.append(D)
             data_E.append(E)
             data_F.append(F)
+            data_F.append(G)
             data_A_ = pd.DataFrame(data_A, columns=['A'])
             data_B_ = pd.DataFrame(data_B, columns=['B'])
             data_C_ = pd.DataFrame(data_C, columns=['C'])
             data_D_ = pd.DataFrame(data_D, columns=['D'])
             data_E_ = pd.DataFrame(data_E, columns=['E'])
             data_F_ = pd.DataFrame(data_E, columns=['F'])
-            df_IETE = pd.concat([data_A_, data_B_, data_C_, data_D_, data_E_, data_F_], axis=1)
+            data_G_ = pd.DataFrame(data_E, columns=['G'])
+            df_IETE = pd.concat([data_A_, data_B_, data_C_, data_D_, data_E_, data_F_, data_G_], axis=1)
     print('----------------------------------------------------------------------', flush=True)
     time.sleep(0.5)
 
@@ -308,9 +413,9 @@ th9 = Process(target=Finder_IETE, args=(1,heure,start_1h))
 th10 = Process(target=Finder_IETE, args=(2,heure,start_1h))
 th11 = Process(target=Finder_IETE, args=(4,heure,start_1h))
 th12 = Process(target=Finder_IETE, args=(6,heure,start_6h))
-th13 = Process(target=Finder_IETE, args=(10,heure,start_6h))
-th14 = Process(target=Finder_IETE, args=(12,heure,start_6h))
-th15 = Process(target=Finder_IETE, args=(1,jour,start_1d))
+th13 = Process(target=Finder_IETE, args=(10,minute,start_15m))
+th14 = Process(target=Finder_IETE, args=(5,minute,start_15m))
+th15 = Process(target=Finder_IETE, args=(1,minute,start_15m))
 
 th1.start()
 th2.start()
@@ -340,6 +445,7 @@ th12.join()
 th13.join()
 th14.join()
 th15.join()
+
 
 
 
