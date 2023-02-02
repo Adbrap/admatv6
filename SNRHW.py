@@ -324,6 +324,7 @@ def Finder_IETE(time1, time_name1, start1):
             pourcent_chercher = ((plus_grand - plus_petit) / plus_petit)*100
             pourcent_chercher = round(pourcent_chercher, 3)
             pourcent_perdu = ((round(G, 5)-round(F, 5))*100)/round(G, 5)
+            pourcent_perdu = round(pourcent_perdu, 3)
             fig = plt.figure(figsize=(10, 7))
             # fig.patch.set_facecolor('#17abde'
             plt.plot([], [], ' ')
@@ -413,9 +414,9 @@ th9 = Process(target=Finder_IETE, args=(1,heure,start_1h))
 th10 = Process(target=Finder_IETE, args=(2,heure,start_1h))
 th11 = Process(target=Finder_IETE, args=(4,heure,start_1h))
 th12 = Process(target=Finder_IETE, args=(6,heure,start_6h))
-th13 = Process(target=Finder_IETE, args=(10,minute,start_15m))
-th14 = Process(target=Finder_IETE, args=(5,minute,start_15m))
-th15 = Process(target=Finder_IETE, args=(1,minute,start_15m))
+th13 = Process(target=Finder_IETE, args=(10,heure,start_6h))
+th14 = Process(target=Finder_IETE, args=(12,heure,start_6h))
+th15 = Process(target=Finder_IETE, args=(1,jour,start_1d))
 
 th1.start()
 th2.start()
